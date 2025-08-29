@@ -6,12 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:prod": "vite build --mode production",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "preview": "vite preview",
-    "test": "echo \"No tests yet\" && exit 0",
-    "serve": "vite preview --port 3000 --host"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.11.3",
