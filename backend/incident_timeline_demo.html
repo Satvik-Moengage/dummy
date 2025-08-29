@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Timeline Graph</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            color: #1e293b;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .critical { color: #dc2626; }
+        .high { color: #ea580c; }
+        .medium { color: #ca8a04; }
+        .low { color: #16a34a; }
+        .ongoing { color: #2563eb; }
+
+        .legend {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .legend h3 {
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .timeline-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        .timeline-container h3 {
+            color: #1e293b;
+            margin-bottom: 24px;
+            font-size: 20px;
+        }
+
+        .service-section {
+            border-left: 4px solid #e2e8f0;
+            padding-left: 20px;
+            margin-bottom: 32px;
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .service-info h4 {
+            color: #1e293b;
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .service-info p {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-operational {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-degraded {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .incident-count {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .timeline-bar {
+            height: 32px;
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            position: relative;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .incident-block {
+            position: absolute;
+            height: 100%;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .incident-block:hover {
+            opacity: 0.8;
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        .no-incidents {
+            height: 32px;
+            background-color: #f0fdf4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #16a34a;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .incident-details {
+            margin-top: 16px;
+        }
+
+        .incident-item {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .incident-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .incident-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .incident-title {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .impact-badge, .status-badge-small {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .impact-critical { background-color: #fecaca; color: #991b1b; }
+        .impact-high { background-color: #fed7aa; color: #9a3412; }
+        .impact-medium { background-color: #fef3c7; color: #92400e; }
+        .impact-low { background-color: #dcfce7; color: #166534; }
+
+        .status-resolved { background-color: #dcfce7; color: #166534; }
+        .status-investigating { background-color: #dbeafe; color: #1e40af; }
+
+        .incident-time {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc2626;
+        }
+
+        @media (max-width: 768px) {
+            .service-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .legend-items {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="orgName">Loading...</h1>
+            <p>Incident Timeline Graph</p>
+        </div>
+
+        <div class="stats" id="statsContainer">
+            <!-- Stats will be loaded here -->
+        </div>
+
+        <div class="legend">
+            <h3>Impact Legend</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #dc2626;"></div>
+                    <span>Critical</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ea580c;"></div>
+                    <span>High</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ca8a04;"></div>
+                    <span>Medium</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #16a34a;"></div>
+                    <span>Low</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-container">
+            <h3>Incident Timeline (Last 7 Days)</h3>
+            <div id="timelineContent" class="loading">
+                Loading incident timeline...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const orgId = '5c80d1dc-8174-4d49-9d32-f708bb80e5d8'; // TechCorp Solutions
+        const apiBase = 'http://localhost:8000/api/v1';
+
+        async function loadTimelineData() {
+            try {
+                const response = await fetch(`${apiBase}/organizations/public/${orgId}/incidents/timeline?days=7`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderTimeline(data);
+                } else {
+                    throw new Error(data.detail || 'Failed to load data');
+                }
+            } catch (error) {
+                document.getElementById('timelineContent').innerHTML = `
+                    <div class="error">
+                        Error loading timeline: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function renderTimeline(data) {
+            // Update organization name
+            document.getElementById('orgName').textContent = data.organization.name;
+
+            // Render stats
+            renderStats(data.summary);
+
+            // Render timeline
+            renderTimelineChart(data);
+        }
+
+        function renderStats(summary) {
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${summary.total_incidents}</div>
+                    <div class="stat-label">Total Incidents</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value critical">${summary.critical_incidents}</div>
+                    <div class="stat-label">Critical</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value ongoing">${summary.ongoing_incidents}</div>
+                    <div class="stat-label">Ongoing</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${summary.average_resolution_hours.toFixed(1)}h</div>
+                    <div class="stat-label">Avg Resolution</div>
+                </div>
+            `;
+        }
+
+        function renderTimelineChart(data) {
+            const { services, timeline_period } = data;
+            const periodStart = new Date(timeline_period.start_date);
+            const periodEnd = new Date(timeline_period.end_date);
+            const totalPeriodMs = periodEnd - periodStart;
+
+            let timelineHTML = '';
+
+            services.forEach(serviceData => {
+                const service = serviceData.service;
+                const incidents = serviceData.incidents;
+
+                timelineHTML += `
+                    <div class="service-section">
+                        <div class="service-header">
+                            <div class="service-info">
+                                <h4>${service.name}</h4>
+                                <p>${service.description}</p>
+                            </div>
+                            <div class="service-status">
+                                <span class="status-badge status-${service.current_status}">
+                                    ${service.current_status}
+                                </span>
+                                <span class="incident-count">
+                                    ${incidents.length} incident${incidents.length !== 1 ? 's' : ''}
+                                </span>
+                            </div>
+                        </div>
+                `;
+
+                if (incidents.length > 0) {
+                    timelineHTML += `
+                        <div class="timeline-bar">
+                    `;
+
+                    incidents.forEach(incident => {
+                        const startTime = new Date(incident.start_time);
+                        const endTime = new Date(incident.end_time);
+                        
+                        const incidentStart = Math.max(startTime, periodStart);
+                        const incidentEnd = Math.min(endTime, periodEnd);
+                        
+                        const leftPercent = (incidentStart - periodStart) / totalPeriodMs * 100;
+                        const widthPercent = Math.max((incidentEnd - incidentStart) / totalPeriodMs * 100, 0.5);
+
+                        timelineHTML += `
+                            <div class="incident-block" 
+                                 style="left: ${leftPercent}%; width: ${widthPercent}%; background-color: ${incident.color};"
+                                 title="${incident.title} (${incident.impact}) - ${formatDuration(incident.duration_hours)}">
+                                ${widthPercent > 15 ? incident.title : ''}
+                            </div>
+                        `;
+                    });
+
+                    timelineHTML += `
+                        </div>
+                        <div class="timeline-labels">
+                            <span>${formatDate(timeline_period.start_date)}</span>
+                            <span>${formatDate(timeline_period.end_date)}</span>
+                        </div>
+                    `;
+
+                    // Add incident details
+                    timelineHTML += '<div class="incident-details">';
+                    incidents.forEach(incident => {
+                        timelineHTML += `
+                            <div class="incident-item">
+                                <div class="incident-header">
+                                    <div class="incident-color-dot" style="background-color: ${incident.color};"></div>
+                                    <span class="incident-title">${incident.title}</span>
+                                    <span class="impact-badge impact-${incident.impact}">${incident.impact}</span>
+                                    <span class="status-badge-small status-${incident.status}">${incident.status}</span>
+                                </div>
+                                <div class="incident-time">
+                                    ${formatDate(incident.start_time)} - ${formatDate(incident.end_time)} 
+                                    (${formatDuration(incident.duration_hours)})
+                                    ${incident.is_ongoing ? ' • Ongoing' : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    timelineHTML += '</div>';
+                } else {
+                    timelineHTML += `
+                        <div class="no-incidents">
+                            No incidents in this period
+                        </div>
+                    `;
+                }
+
+                timelineHTML += '</div>';
+            });
+
+            document.getElementById('timelineContent').innerHTML = timelineHTML;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatDuration(hours) {
+            if (hours < 1) {
+                return `${Math.round(hours * 60)}m`;
+            } else if (hours < 24) {
+                return `${Math.round(hours * 10) / 10}h`;
+            } else {
+                return `${Math.round(hours / 24 * 10) / 10}d`;
+            }
+        }
+
+        // Load data when page loads
+        window.addEventListener('load', loadTimelineData);
+    </script>
+</body>
+</html>
